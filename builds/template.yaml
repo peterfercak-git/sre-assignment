@@ -1,7 +1,4 @@
 version: 0.2
-env:
-  variables:
-    ECR_REPO: "sre-repository"
 phases:
   install:
     commands:
@@ -17,15 +14,15 @@ phases:
   pre_build:
     commands:
       - echo "Logging into Amazon ECR..."
-      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
       - echo "Building the Docker image..."
-      - docker build -t $REPOSITORY_URI/$ECR_REPO:latest .
-      - docker tag $REPOSITORY_URI/$ECR_REPO:latest $REPOSITORY_URI/$ECR_REPO:$TAG
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
   post_build:
     commands:
       - echo "Pushing the Docker images..."
-      - docker push $REPOSITORY_URI/$ECR_REPO:latest
-      - docker push $REPOSITORY_URI/$ECR_REPO:$TAG
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$TAG
