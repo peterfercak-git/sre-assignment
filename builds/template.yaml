@@ -7,11 +7,15 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR....
-      - aws --version
-      - docker version
+      - echo "Logging into Amazon ECR..."
+      - $(aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com)
+      - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
       - echo Building the Docker image...
+      - docker build -t sre-repository .
+#      - docker tag sre-repository:latest 684495519937.dkr.ecr.eu-west-2.amazonaws.com/sre-repository:latest
+#      - docker push 684495519937.dkr.ecr.eu-west-2.amazonaws.com/sre-repository:latest
   post_build:
     commands:
       - echo Build completed on `date`
