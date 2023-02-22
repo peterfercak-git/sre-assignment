@@ -26,3 +26,7 @@ phases:
       - echo "Pushing the Docker images..."
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$TAG
+
+      - echo "Deploy to EKS"
+      - kubectl apply -f kubernetes/namespace.yaml
+      - kubectl get ns
