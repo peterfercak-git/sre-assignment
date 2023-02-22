@@ -9,13 +9,16 @@ phases:
       - echo "Installing kubectl"
       - curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.10/2023-01-30/bin/linux/amd64/kubectl
       - chmod +x ./kubectl
-      - mv -f ./kubectl /usr/local/bin/kubectl
+      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
       - kubectl version --short --client
   pre_build:
     commands:
       - echo "Logging into Amazon ECR..."
       - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+
+      - echo "Login AWS EKS"
+      - aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
   build:
     commands:
       - echo "Building the Docker image..."
@@ -29,5 +32,4 @@ phases:
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
-      - aws eks update-kubeconfig --name eks-cluster --region eu-west-2
-      - kubectl get ns
+      - kubectl get svc
