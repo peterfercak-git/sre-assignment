@@ -29,4 +29,5 @@ phases:
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
+      - aws eks update-kubeconfig --name eks-cluster --region eu-west-2
       - kubectl get ns
