@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "Initialize the Docker daemon"
+      - apt-get install -y git
   pre_build:
     commands:
       - echo "Login AWS EKS"
