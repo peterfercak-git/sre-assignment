@@ -11,8 +11,6 @@ phases:
       - chmod +x ./kubectl
       - mv ./kubectl /usr/local/bin/kubectl
       - kubectl version --short --client
-      - echo "Login AWS EKS"
-      - aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
   pre_build:
     commands:
       - echo "Login AWS EKS"
@@ -34,4 +32,4 @@ phases:
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
-      - kubectl get svc
+#      - kubectl get svc
