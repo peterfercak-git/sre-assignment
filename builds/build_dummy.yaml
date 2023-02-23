@@ -5,6 +5,7 @@ phases:
       - apt-get install -y git
       - git --version
       - git clone https://github.com/e-conomic/hiring-assignments.git
+      - cd hiring-assignments/sre/dummy-pdf-or-png
       - ls -l
   pre_build:
     commands:
