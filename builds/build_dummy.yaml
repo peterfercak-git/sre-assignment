@@ -3,6 +3,8 @@ phases:
   install:
     commands:
       - apt-get install -y git
+      - git --version
+      - git clone https://github.com/e-conomic/hiring-assignments.git
   pre_build:
     commands:
       - echo "Login AWS EKS"
