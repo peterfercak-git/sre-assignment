@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates CI/CD pipeline
+Parameters:
+  ECRRepositoryName:
+    Description: Name of ECR repository
+    Type: String
+    Default: sre-repository
+  Version:
+    Description: Name
+    Type: String
+    Default: sre
+  ProdAccountId:
+    Description: Account ID for the Stag AWS account
+    Type: String
+    Default: '684495519937'
+Resources:
+  AmazonCloudWatchEventRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-trigger-pipeline-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: !Sub 'cve-pipeline-policy-name-${Version}'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'codepipeline:StartPipelineExecution'
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:codepipeline:'
+                    - !Ref 'AWS::Region'
+                    - ':'
+                    - !Ref 'AWS::AccountId'
+                    - ':'
+                    - !Sub 'cve-pipeline-${Version}'
+  PipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-codepipeline-system-tests-role-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  ECRRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Ref ECRRepositoryName
+  BuildProjectSnyk:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: !Sub 'cve-codebuild-${Version}'
+      EncryptionKey: '{{resolve:ssm:EncryptionKeyArn:1}}'
+      ServiceRole: !Sub 'arn:aws:iam::${ProdAccountId}:role/cve-codebuild-role-${Version}'
+      Artifacts:
+        Packaging: zip
+        Type: CODEPIPELINE
+      Environment:
+        Type: linuxContainer
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/standard:6.0'
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref 'AWS::Region'
+          - Name: REPOSITORY_URI
+            Value: !Sub >-
+              ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: builds/build_main.yaml
+      TimeoutInMinutes: 15
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_CUSTOM_CACHE
+  GithubWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: '{{resolve:ssm:GitHubOAuthToken:1}}'
+      RegisterWithThirdParty: 'true'
+      Filters:
+      - JsonPath: "$.ref"
+        MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref Pipeline
+      TargetAction: Source
+      TargetPipelineVersion: !GetAtt Pipeline.Version
+  Pipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Description: Creating a deployment pipeline for your project in AWS CodePipeline
+    Properties:
+      RoleArn: !Sub 'arn:aws:iam::${ProdAccountId}:role/cve-codepipeline-role-${Version}'
+      Name: !Sub 'cve-pipeline-${Version}'
+      ArtifactStore:
+        Type: S3
+        Location: !Sub '${Version}-s3-artifact-bucket'
+        EncryptionKey:
+          Id: '{{resolve:ssm:EncryptionKeyArn:1}}'
+          Type: KMS
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                Owner: peterfercak-git
+                Repo: sre-assignment
+                Branch: main
+                PollForSourceChanges: false
+                OAuthToken: '{{resolve:ssm:GitHubOAuthToken:1}}'
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: MainBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildProjectSnyk
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildArtifact

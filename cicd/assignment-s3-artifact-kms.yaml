@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provisions S3 buckets and KMS keys.
+Parameters:
+  Version:
+    Description: Name
+    Type: String
+    Default: sre
+  ProdAccountId:
+    Description: Account ID
+    Type: String
+    Default: '684495519937'
+Resources:
+  EncryptionKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: !Ref 'AWS::StackName'
+        Statement:
+          - Sid: Allows admin of the key
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:Create*'
+              - 'kms:Describe*'
+              - 'kms:Enable*'
+              - 'kms:List*'
+              - 'kms:Put*'
+              - 'kms:Update*'
+              - 'kms:Revoke*'
+              - 'kms:Disable*'
+              - 'kms:Get*'
+              - 'kms:Delete*'
+              - 'kms:ScheduleKeyDeletion'
+              - 'kms:CancelKeyDeletion'
+            Resource: '*'
+          - Sid: Allows key use
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${ProdAccountId}:root'
+            Action:
+              - 'kms:CreateGrant'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
+            Resource: '*'
+  KMSAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/allpipelines-crossaccounts-${Version}'
+      TargetKeyId: !Ref EncryptionKey
+  ArtifactBucket:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub '${Version}-s3-artifact-bucket'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 40
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+  PipelinesArtifactBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref ArtifactBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:Get*'
+              - 's3:Put*'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ArtifactBucket
+                - /*
+            Principal:
+              AWS:
+                - !Sub 'arn:aws:iam::${ProdAccountId}:root'
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ArtifactBucket
+            Principal:
+              AWS:
+                - !Sub >-
+                  arn:aws:iam::${ProdAccountId}:role/cve-codebuild-role-${Version}
+                - !Sub >-
+                  arn:aws:iam::${ProdAccountId}:role/cve-codepipeline-role-${Version}
+                - !Sub >-
+                  arn:aws:iam::${ProdAccountId}:role/cve-cloudformationdeployer-role-${Version}
+                - !Sub >-
+                  arn:aws:iam::${ProdAccountId}:role/cve-cloudformation-role-${Version}
+Outputs:
+  ArtifactBucket:
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub 'S3ArtifactBucket-${Version}'
+  EncryptionKeyArn:
+    Value: !GetAtt
+      - EncryptionKey
+      - Arn
+    Export:
+      Name: !Sub 'EncryptionKeyArn-${Version}'

@@ -1,0 +1,331 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create IAM roles for pipelines and federated users
+Parameters:
+  Version:
+    Description: Name
+    Type: String
+    Default: snyk
+  S3ArtifactBucket:
+    Description: S3 artifact bucket
+    Type: String
+  ProdAccountId:
+    Description: Account ID
+    Type: String
+    Default: '684495519937'
+  EncryptionKeyArn:
+    Description: ARN of the KMS key
+    Type: String
+Resources:
+  CodeBuildRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-codebuild-role-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+  CodeBuildPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: !Sub 'cve-codebuild-policy-${Version}'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'cloudfront:CreateInvalidation'
+              - 'cloudfront:GetInvalidation'
+              - 'cloudfront:ListInvalidations'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'dynamodb:*'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'cloudformation:ValidateTemplate'
+              - 'cloudfront:'
+              - 'codebuild:*'
+              - 'codecommit:List*'
+              - 'codecommit:Get*'
+              - 'codecommit:GitPull'
+              - 'codecommit:UploadArchive'
+              - 'codecommit:CancelUploadArchive'
+              - 'codecommit:BatchGetRepositories'
+              - 'logs:*'
+              - 's3:PutObject'
+              - 's3:GetBucketPolicy'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:PutObjectAcl'
+              - 's3:DeleteObject'
+              - 'ecs:DescribeTasks'
+              - 'ecs:StopTask'
+              - 'ecs:RunTask'
+              - 'ec2:DescribeSubnets'
+              - 'ec2:DescribeSecurityGroups'
+              - 'ec2:DescribeNetworkInterfaces'
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:CreateNetworkInterfacePermission'
+              - 'ec2:DeleteNetworkInterface'
+              - 'ec2:DescribeDhcpOptions'
+              - 'ec2:DescribeVpcs'
+              - 'iam:PassRole'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'codepipeline:GetPipelineState'
+              - 'codepipeline:ListPipelineExecutions'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'eks:*'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'ecr:GetAuthorizationToken'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:BatchGetImage'
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:PutImage'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'secretsmanager:Get*'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'kms:DescribeKey'
+              - 'kms:GetKeyPolicy'
+              - 'kms:List*'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:Generate*'
+              - 'secretsmanager:GetSecretValue'
+            Resource:
+              - !Ref EncryptionKeyArn
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameters'
+            Resource:
+              - !Sub 'arn:aws:ssm:eu-west-1:${AWS::AccountId}:parameter/*'
+      Roles:
+        - !Ref CodeBuildRole
+  PipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-codepipeline-role-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  PipelinePolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: !Sub 'cve-codepipeline-policy-${Version}'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'cloudformation:*'
+              - 'codepipeline:*'
+              - 'codecommit:List*'
+              - 'codecommit:Get*'
+              - 'codecommit:GitPull'
+              - 'codecommit:UploadArchive'
+              - 'codecommit:CancelUploadArchive'
+              - 'codecommit:BatchGetRepositories'
+              - 'codebuild:BatchGetBuilds'
+              - 'codebuild:StartBuild'
+              - 'iam:PassRole'
+              - 'iam:ListRoles'
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              - 's3:ListAllMyBuckets'
+              - 's3:GetBucketLocation'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - 'kms:*'
+            Resource:
+              - !Ref EncryptionKeyArn
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetBucketPolicy'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3ArtifactBucket
+                  - /*
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3ArtifactBucket
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Resource:
+              - '*'
+      Roles:
+        - !Ref PipelineRole
+  CloudformationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-cloudformation-role-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Ref ProdAccountId
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+  CloudformationPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: !Sub 'cve-cloudformation-policy-${Version}'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'cloudformation:*'
+              - 's3:*'
+              - 'iam:PassRole'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'kms:*'
+            Resource:
+              - !Ref EncryptionKeyArn
+      Roles:
+        - !Ref CloudformationRole
+  CloudformationDeployerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub 'cve-cloudformationdeployer-role-${Version}'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  CloudformationDeployerPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: !Sub 'cve-cloudformationdeployer-policy-role-${Version}'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sqs:*'
+              - 'apigateway:*'
+              - 'amplify:*'
+              - 'cloudformation:*'
+              - 'cloudfront:*'
+              - 'cloudwatch:*'
+              - 'codebuild:*'
+              - 'codecommit:*'
+              - 'codepipeline:*'
+              - 'codedeploy:*'
+              - 'config:*'
+              - 'events:*'
+              - 's3:*'
+              - 'ec2:*'
+              - 'guardduty:*'
+              - 'iam:*'
+              - 'ecr:*'
+              - 'ecs:*'
+              - 'lambda:*'
+              - 'logs:*'
+              - 'route53:*'
+              - 'sns:*'
+              - 'states:*'
+              - 'elasticloadbalancing:*'
+              - 'dynamodb:*'
+              - 'application-autoscaling:*'
+              - 'secretsmanager:GetSecretValue'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'kms:*'
+            Resource:
+              - !Ref EncryptionKeyArn
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetBucketPolicy'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3ArtifactBucket
+                  - /*
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3ArtifactBucket
+      Roles:
+        - !Ref CloudformationDeployerRole
+Outputs:
+  PipelineRoleArn:
+    Value: !GetAtt
+      - PipelineRole
+      - Arn
+    Export:
+      Name: !Sub 'PipelineRoleArn-${Version}'
+  CodeBuildRoleArn:
+    Value: !GetAtt
+      - CodeBuildRole
+      - Arn
+    Export:
+      Name: !Sub 'CodeBuildRoleArn-${Version}'
+  CloudformationRoleArn:
+    Value: !GetAtt
+      - CloudformationRole
+      - Arn
+    Export:
+      Name: !Sub 'CloudformationRoleArn-${Version}'
+  CloudformationDeployerRole:
+    Value: !GetAtt
+      - CloudformationDeployerRole
+      - Arn
+    Export:
+      Name: !Sub 'CloudformationDeployerRole-${Version}'

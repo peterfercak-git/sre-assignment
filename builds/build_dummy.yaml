@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo "Initialize the Docker daemon"
+  pre_build:
+    commands:
+      - echo "Login AWS EKS"
+  build:
+    commands:
+      - echo "Building the Docker image"
+  post_build:
+    commands:
+      - echo "Pushing the Docker images"
