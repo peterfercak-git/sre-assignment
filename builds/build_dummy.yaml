@@ -17,8 +17,12 @@ phases:
   build:
     commands:
       - cd hiring-assignments/sre/dummy-pdf-or-png
-      - ls -l
       - echo "Building the Docker image"
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
   post_build:
     commands:
       - echo "Pushing the Docker images"
+      - echo "Pushing the Docker images..."
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$TAG
