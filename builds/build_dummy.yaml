@@ -18,6 +18,7 @@ phases:
     commands:
       - cd hiring-assignments/sre/dummy-pdf-or-png
       - echo "Building the Docker image"
+      - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASS
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
   post_build:
