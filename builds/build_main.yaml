@@ -33,4 +33,4 @@ phases:
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
-#      - kubectl get svc
+      - kubectl get svc
