@@ -8,7 +8,7 @@ app.config["DEBUG"] = True
 def show_post(int_id):
     if type(int_id) is int:
         # return "Correct"
-        return redirect('/error')
+        return "Correct"
     return redirect('/error')
 
 
