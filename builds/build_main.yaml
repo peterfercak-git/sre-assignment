@@ -1,4 +1,7 @@
 version: 0.2
+env:
+  variables:
+    NAMESPACE: python-web
 phases:
   install:
     commands:
@@ -32,5 +35,6 @@ phases:
       - docker push $REPOSITORY_URI:$TAG
 
       - echo "Deploy to EKS"
-#      - kubectl apply -f kubernetes/namespace.yaml
-      - kubectl get svc
+      - kubectl apply -f kubernetes/namespace.yaml
+      - kubectl get ns
+#      - kubectl set image deployment/python-web 684495519937.dkr.ecr.eu-west-2.amazonaws.com/sre-repository:b3d48555 -n python-web
