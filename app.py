@@ -8,7 +8,7 @@ app.config["DEBUG"] = True
 def show_post(int_id):
     if type(int_id) is int:
         # return "Correct"
-        return "Correct"
+        return "This is not expected response - dummy app has not been requested."
     return redirect('/error')
 
 
