@@ -36,5 +36,11 @@ phases:
 
       - echo "Deploy to EKS"
       - kubectl apply -f kubernetes/namespace.yaml
+      - kubectl apply -f kubernetes/service.yaml
+      - kubectl apply -f kubernetes/deployment.yaml
+
+      - kubectl get pods -n python-web
+      - kubectl get deploy -n python-web
+      - kubectl get svc -n python-web
       - kubectl get ns
 #      - kubectl set image deployment/python-web 684495519937.dkr.ecr.eu-west-2.amazonaws.com/sre-repository:b3d48555 -n python-web
