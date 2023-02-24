@@ -1,18 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Creates CI/CD pipeline
 Parameters:
+  GitPassword:
+    Type: String
+    NoEcho: true
   ECRRepositoryName:
     Description: Name of ECR repository
     Type: String
     Default: sre-repository
+  DummyRepositoryName:
+    Description: Name of ECR repository
+    Type: String
+    Default: dummy-repository
   Version:
     Description: Name
     Type: String
     Default: sre
-  ProdAccountId:
-    Description: Account ID for the Stag AWS account
-    Type: String
-    Default: '684495519937'
 Resources:
   AmazonCloudWatchEventRole:
     Type: 'AWS::IAM::Role'
@@ -59,12 +62,16 @@ Resources:
     Type: 'AWS::ECR::Repository'
     Properties:
       RepositoryName: !Ref ECRRepositoryName
+  DummyRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Ref DummyRepositoryName
   BuildProjectSnyk:
     Type: 'AWS::CodeBuild::Project'
     Properties:
       Name: !Sub 'cve-codebuild-${Version}'
       EncryptionKey: '{{resolve:ssm:EncryptionKeyArn:1}}'
-      ServiceRole: !Sub 'arn:aws:iam::${ProdAccountId}:role/cve-codebuild-role-${Version}'
+      ServiceRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/cve-codebuild-role-${Version}'
       Artifacts:
         Packaging: zip
         Type: CODEPIPELINE
@@ -74,6 +81,10 @@ Resources:
         Image: 'aws/codebuild/standard:6.0'
         PrivilegedMode: true
         EnvironmentVariables:
+          - Name: DOCKERHUB_USERNAME
+            Value: peterfercak
+          - Name: DOCKERHUB_PASS
+            Value: !Ref GitPassword
           - Name: AWS_DEFAULT_REGION
             Value: !Ref 'AWS::Region'
           - Name: REPOSITORY_URI
@@ -95,16 +106,18 @@ Resources:
         SecretToken: '{{resolve:ssm:GitHubOAuthToken:1}}'
       RegisterWithThirdParty: 'true'
       Filters:
-      - JsonPath: "$.ref"
-        MatchEquals: refs/heads/{Branch}
+        - JsonPath: $.ref
+          MatchEquals: 'refs/heads/{Branch}'
       TargetPipeline: !Ref Pipeline
       TargetAction: Source
-      TargetPipelineVersion: !GetAtt Pipeline.Version
+      TargetPipelineVersion: !GetAtt
+        - Pipeline
+        - Version
   Pipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Description: Creating a deployment pipeline for your project in AWS CodePipeline
     Properties:
-      RoleArn: !Sub 'arn:aws:iam::${ProdAccountId}:role/cve-codepipeline-role-${Version}'
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/cve-codepipeline-role-${Version}'
       Name: !Sub 'cve-pipeline-${Version}'
       ArtifactStore:
         Type: S3
