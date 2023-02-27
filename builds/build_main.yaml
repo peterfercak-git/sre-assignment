@@ -15,25 +15,28 @@ phases:
       - mv ./kubectl /usr/local/bin/kubectl
       - kubectl version --short --client
 
+      - echo "Installing Pytest"
       - pip3 install pytest
   pre_build:
     commands:
       - echo "Login AWS EKS"
-      - aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
+#      - aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
 
-      - echo "Logging into Amazon ECR..."
+      - echo "Logging into Amazon ECR"
       - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
+      - echo "Running tests"
       - python -m pytest
-      - echo "Building the Docker image..."
+
+      - echo "Building the Docker image"
       - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASS
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
   post_build:
     commands:
-      - echo "Pushing the Docker images..."
+      - echo "Pushing the Docker images"
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$TAG
 
@@ -42,9 +45,4 @@ phases:
 #      - kubectl apply -f kubernetes/service.yaml
 #      - kubectl apply -f kubernetes/deployment.yaml
 #      - kubectl apply -f kubernetes/ingress.yaml
-
-      - kubectl get pods -n python-web
-      - kubectl get deploy -n python-web
-      - kubectl get svc -n python-web
-      - kubectl get ns
 #      - kubectl set image deploy/$NAMESPACE $REPOSITORY_URI:$TAG -n $NAMESPACE
