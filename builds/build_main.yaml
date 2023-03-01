@@ -23,7 +23,8 @@ phases:
 #      - aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
 
       - echo "Logging into Amazon ECR"
-      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
+#      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
+      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin public.ecr.aws/u9u9i3t6
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
@@ -32,13 +33,16 @@ phases:
 
       - echo "Building the Docker image"
       - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASS
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
+#      - docker build -t $REPOSITORY_URI:latest .
+      - docker build -t sre-repository-public .
+#      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
+      - docker tag sre-repository-public:latest public.ecr.aws/u9u9i3t6/sre-repository-public:latest
   post_build:
     commands:
       - echo "Pushing the Docker images"
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$TAG
+      - docker push public.ecr.aws/u9u9i3t6/sre-repository-public:latest
+#      - docker push $REPOSITORY_URI:latest
+#      - docker push $REPOSITORY_URI:$TAG
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
