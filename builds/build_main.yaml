@@ -33,16 +33,13 @@ phases:
 
       - echo "Building the Docker image"
       - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASS
-#      - docker build -t $REPOSITORY_URI:latest .
-      - docker build -t sre-repository-public .
-#      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
-      - docker tag sre-repository-public:latest public.ecr.aws/u9u9i3t6/sre-repository-public:latest
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$TAG
   post_build:
     commands:
       - echo "Pushing the Docker images"
-      - docker push public.ecr.aws/u9u9i3t6/sre-repository-public:latest
-#      - docker push $REPOSITORY_URI:latest
-#      - docker push $REPOSITORY_URI:$TAG
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$TAG
 
       - echo "Deploy to EKS"
 #      - kubectl apply -f kubernetes/namespace.yaml
