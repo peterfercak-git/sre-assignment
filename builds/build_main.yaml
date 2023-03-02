@@ -24,7 +24,7 @@ phases:
 
       - echo "Logging into Amazon ECR"
 #      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 684495519937.dkr.ecr.eu-west-2.amazonaws.com
-      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin public.ecr.aws/u9u9i3t6
+      - aws ecr-public get-login-password --region eu-west-2 | docker login --username AWS --password-stdin public.ecr.aws/u9u9i3t6
       - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
   build:
     commands:
