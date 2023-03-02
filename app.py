@@ -1,7 +1,7 @@
 """
 Recruitment assignment for Site Reliability Engineers
 """
-import requests
+from requests import request
 from flask import Flask, redirect, url_for, abort
 
 app = Flask(__name__)
@@ -11,7 +11,12 @@ app.config["DEBUG"] = True
 @app.route('/')
 # Homepage endpoint
 def index():
-    r = requests.get("https://www.google.com/")
+    r = request(
+        "GET",
+        "127.0.0.1:3000",
+        headers={},
+        data={}
+    )
     return f"You are on homepage - status code - {r.status_code}"
 
 
