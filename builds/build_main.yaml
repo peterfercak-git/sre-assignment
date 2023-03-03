@@ -17,6 +17,7 @@ phases:
 
       - echo "Installing Pytest"
       - pip3 install pytest
+      - pip3 install PyPDF2
   pre_build:
     commands:
       - echo "Login AWS EKS"
