@@ -1,20 +1,34 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: python-web
-  namespace: python-web
-  annotations:
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/scheme: internet-facing
-spec:
-  ingressClassName: alb
-  rules:
-    - http:
+apiVersion: v1
+items:
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/$1"},"name":"example-ingress","namespace":"default"},"spec":{"rules":[{"host":"sre.assignment.com","http":{"paths":[{"backend":{"service":{"name":"web","port":{"number":8080}}},"path":"/","pathType":"Prefix"}]}}]}}
+    creationTimestamp: "2023-03-03T11:37:03Z"
+    generation: 1
+    name: example-ingress
+    namespace: default
+    resourceVersion: "17455"
+    uid: 9fcca31e-55b5-4457-80a9-8bd4b0f5cd90
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: sre.assignment.com
+      http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: python-web
-                port:
-                  number: 80
+        - backend:
+            service:
+              name: web
+              port:
+                number: 8080
+          path: /
+          pathType: Prefix
+  status:
+    loadBalancer:
+      ingress:
+      - ip: 172.28.102.2
+kind: List
+metadata:
+  resourceVersion: ""

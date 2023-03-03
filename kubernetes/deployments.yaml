@@ -1,0 +1,129 @@
+apiVersion: v1
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "3"
+    creationTimestamp: "2023-03-03T11:33:58Z"
+    generation: 3
+    labels:
+      app: web
+    name: web
+    namespace: default
+    resourceVersion: "17397"
+    uid: 18d1f851-1f00-4cb8-afea-fc2b8f036467
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: web
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: web
+      spec:
+        containers:
+        - image: public.ecr.aws/u9u9i3t6/sre-repository-public:latest
+          imagePullPolicy: Always
+          name: hello-app
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2023-03-03T11:33:58Z"
+      lastUpdateTime: "2023-03-03T14:00:07Z"
+      message: ReplicaSet "web-86cf5748cc" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2023-03-03T19:12:13Z"
+      lastUpdateTime: "2023-03-03T19:12:13Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 3
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2023-03-03T12:07:52Z"
+    generation: 1
+    labels:
+      app: web-dummy
+    name: web-dummy
+    namespace: default
+    resourceVersion: "17378"
+    uid: ad742c31-b59a-469d-9baa-c447a30da7d0
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: web-dummy
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: web-dummy
+      spec:
+        containers:
+        - image: public.ecr.aws/u9u9i3t6/dummy-repository-public:latest
+          imagePullPolicy: Always
+          name: dummy-repository-public
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2023-03-03T12:07:52Z"
+      lastUpdateTime: "2023-03-03T12:07:55Z"
+      message: ReplicaSet "web-dummy-667dcc7d4f" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2023-03-03T19:12:10Z"
+      lastUpdateTime: "2023-03-03T19:12:10Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+kind: List
+metadata:
+  resourceVersion: ""
