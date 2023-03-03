@@ -13,7 +13,7 @@ app.config["DEBUG"] = True
 def index():
     r = request(
         "GET",
-        "http://127.0.0.1:3000",
+        "https://www.google.com/",
         headers={},
         data={}
     )
