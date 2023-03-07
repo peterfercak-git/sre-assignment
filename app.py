@@ -24,7 +24,7 @@ def invalid_route(e):
 # Mime type endpoint
 def mime_type(number):
     if number.isnumeric():
-        r = requests.get("http://172.28.102.2:30001")
+        r = requests.get("http://172.20.73.94:30001")
         if r.headers['Content-Type'] == "application/pdf":
             with open("my_pdf.pdf", 'wb') as my_data:
                 my_data.write(r.content)
